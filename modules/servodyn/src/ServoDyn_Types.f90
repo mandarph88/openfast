@@ -315,6 +315,7 @@ IMPLICIT NONE
     REAL(ReKi)  :: ExternalYawPosCom      !< Commanded nacelle yaw position from Simulink or Labview [radians]
     REAL(ReKi)  :: ExternalYawRateCom      !< Commanded nacelle yaw rate from Simulink or Labview [rad/s]
     REAL(ReKi) , DIMENSION(:), ALLOCATABLE  :: ExternalBlPitchCom      !< Commanded blade pitch from Simulink or LabVIEW [radians]
+    REAL(ReKi) , DIMENSION(:), ALLOCATABLE  :: ExternalBlAirfoilCom      !< Airfoil command from Simulink or LabVIEW [-]
     REAL(ReKi)  :: ExternalGenTrq      !< Electrical generator torque from Simulink or LabVIEW [N-m]
     REAL(ReKi)  :: ExternalElecPwr      !< Electrical power from Simulink or LabVIEW [W]
     REAL(ReKi)  :: ExternalHSSBrFrac      !< Fraction of full braking torque: 0 (off) <= HSSBrFrac <= 1 (full) from Simulink or LabVIEW [-]
@@ -5944,6 +5945,18 @@ IF (ALLOCATED(SrcInputData%ExternalBlPitchCom)) THEN
   END IF
     DstInputData%ExternalBlPitchCom = SrcInputData%ExternalBlPitchCom
 ENDIF
+IF (ALLOCATED(SrcInputData%ExternalBlAirfoilCom)) THEN
+  i1_l = LBOUND(SrcInputData%ExternalBlAirfoilCom,1)
+  i1_u = UBOUND(SrcInputData%ExternalBlAirfoilCom,1)
+  IF (.NOT. ALLOCATED(DstInputData%ExternalBlAirfoilCom)) THEN 
+    ALLOCATE(DstInputData%ExternalBlAirfoilCom(i1_l:i1_u),STAT=ErrStat2)
+    IF (ErrStat2 /= 0) THEN 
+      CALL SetErrStat(ErrID_Fatal, 'Error allocating DstInputData%ExternalBlAirfoilCom.', ErrStat, ErrMsg,RoutineName)
+      RETURN
+    END IF
+  END IF
+    DstInputData%ExternalBlAirfoilCom = SrcInputData%ExternalBlAirfoilCom
+ENDIF
     DstInputData%ExternalGenTrq = SrcInputData%ExternalGenTrq
     DstInputData%ExternalElecPwr = SrcInputData%ExternalElecPwr
     DstInputData%ExternalHSSBrFrac = SrcInputData%ExternalHSSBrFrac
@@ -6005,6 +6018,9 @@ ENDIF
 IF (ALLOCATED(InputData%ExternalBlPitchCom)) THEN
   DEALLOCATE(InputData%ExternalBlPitchCom)
 ENDIF
+IF (ALLOCATED(InputData%ExternalBlAirfoilCom)) THEN
+  DEALLOCATE(InputData%ExternalBlAirfoilCom)
+ENDIF
   CALL TMD_DestroyInput( InputData%NTMD, ErrStat, ErrMsg )
   CALL TMD_DestroyInput( InputData%TTMD, ErrStat, ErrMsg )
 IF (ALLOCATED(InputData%SuperController)) THEN
@@ -6063,6 +6079,11 @@ ENDIF
   IF ( ALLOCATED(InData%ExternalBlPitchCom) ) THEN
     Int_BufSz   = Int_BufSz   + 2*1  ! ExternalBlPitchCom upper/lower bounds for each dimension
       Re_BufSz   = Re_BufSz   + SIZE(InData%ExternalBlPitchCom)  ! ExternalBlPitchCom
+  END IF
+  Int_BufSz   = Int_BufSz   + 1     ! ExternalBlAirfoilCom allocated yes/no
+  IF ( ALLOCATED(InData%ExternalBlAirfoilCom) ) THEN
+    Int_BufSz   = Int_BufSz   + 2*1  ! ExternalBlAirfoilCom upper/lower bounds for each dimension
+      Re_BufSz   = Re_BufSz   + SIZE(InData%ExternalBlAirfoilCom)  ! ExternalBlAirfoilCom
   END IF
       Re_BufSz   = Re_BufSz   + 1  ! ExternalGenTrq
       Re_BufSz   = Re_BufSz   + 1  ! ExternalElecPwr
@@ -6196,6 +6217,19 @@ ENDIF
 
       IF (SIZE(InData%ExternalBlPitchCom)>0) ReKiBuf ( Re_Xferred:Re_Xferred+(SIZE(InData%ExternalBlPitchCom))-1 ) = PACK(InData%ExternalBlPitchCom,.TRUE.)
       Re_Xferred   = Re_Xferred   + SIZE(InData%ExternalBlPitchCom)
+  END IF
+  IF ( .NOT. ALLOCATED(InData%ExternalBlAirfoilCom) ) THEN
+    IntKiBuf( Int_Xferred ) = 0
+    Int_Xferred = Int_Xferred + 1
+  ELSE
+    IntKiBuf( Int_Xferred ) = 1
+    Int_Xferred = Int_Xferred + 1
+    IntKiBuf( Int_Xferred    ) = LBOUND(InData%ExternalBlAirfoilCom,1)
+    IntKiBuf( Int_Xferred + 1) = UBOUND(InData%ExternalBlAirfoilCom,1)
+    Int_Xferred = Int_Xferred + 2
+
+      IF (SIZE(InData%ExternalBlAirfoilCom)>0) ReKiBuf ( Re_Xferred:Re_Xferred+(SIZE(InData%ExternalBlAirfoilCom))-1 ) = PACK(InData%ExternalBlAirfoilCom,.TRUE.)
+      Re_Xferred   = Re_Xferred   + SIZE(InData%ExternalBlAirfoilCom)
   END IF
       ReKiBuf ( Re_Xferred:Re_Xferred+(1)-1 ) = InData%ExternalGenTrq
       Re_Xferred   = Re_Xferred   + 1
@@ -6411,6 +6445,29 @@ ENDIF
     mask1 = .TRUE. 
       IF (SIZE(OutData%ExternalBlPitchCom)>0) OutData%ExternalBlPitchCom = UNPACK(ReKiBuf( Re_Xferred:Re_Xferred+(SIZE(OutData%ExternalBlPitchCom))-1 ), mask1, 0.0_ReKi )
       Re_Xferred   = Re_Xferred   + SIZE(OutData%ExternalBlPitchCom)
+    DEALLOCATE(mask1)
+  END IF
+  IF ( IntKiBuf( Int_Xferred ) == 0 ) THEN  ! ExternalBlAirfoilCom not allocated
+    Int_Xferred = Int_Xferred + 1
+  ELSE
+    Int_Xferred = Int_Xferred + 1
+    i1_l = IntKiBuf( Int_Xferred    )
+    i1_u = IntKiBuf( Int_Xferred + 1)
+    Int_Xferred = Int_Xferred + 2
+    IF (ALLOCATED(OutData%ExternalBlAirfoilCom)) DEALLOCATE(OutData%ExternalBlAirfoilCom)
+    ALLOCATE(OutData%ExternalBlAirfoilCom(i1_l:i1_u),STAT=ErrStat2)
+    IF (ErrStat2 /= 0) THEN 
+       CALL SetErrStat(ErrID_Fatal, 'Error allocating OutData%ExternalBlAirfoilCom.', ErrStat, ErrMsg,RoutineName)
+       RETURN
+    END IF
+    ALLOCATE(mask1(i1_l:i1_u),STAT=ErrStat2)
+    IF (ErrStat2 /= 0) THEN 
+       CALL SetErrStat(ErrID_Fatal, 'Error allocating mask1.', ErrStat, ErrMsg,RoutineName)
+       RETURN
+    END IF
+    mask1 = .TRUE. 
+      IF (SIZE(OutData%ExternalBlAirfoilCom)>0) OutData%ExternalBlAirfoilCom = UNPACK(ReKiBuf( Re_Xferred:Re_Xferred+(SIZE(OutData%ExternalBlAirfoilCom))-1 ), mask1, 0.0_ReKi )
+      Re_Xferred   = Re_Xferred   + SIZE(OutData%ExternalBlAirfoilCom)
     DEALLOCATE(mask1)
   END IF
       OutData%ExternalGenTrq = ReKiBuf( Re_Xferred )
@@ -7321,6 +7378,14 @@ IF (ALLOCATED(u_out%ExternalBlPitchCom) .AND. ALLOCATED(u1%ExternalBlPitchCom)) 
   DEALLOCATE(b1)
   DEALLOCATE(c1)
 END IF ! check if allocated
+IF (ALLOCATED(u_out%ExternalBlAirfoilCom) .AND. ALLOCATED(u1%ExternalBlAirfoilCom)) THEN
+  ALLOCATE(b1(SIZE(u_out%ExternalBlAirfoilCom,1)))
+  ALLOCATE(c1(SIZE(u_out%ExternalBlAirfoilCom,1)))
+  b1 = -(u1%ExternalBlAirfoilCom - u2%ExternalBlAirfoilCom)/t(2)
+  u_out%ExternalBlAirfoilCom = u1%ExternalBlAirfoilCom + b1 * t_out
+  DEALLOCATE(b1)
+  DEALLOCATE(c1)
+END IF ! check if allocated
   b0 = -(u1%ExternalGenTrq - u2%ExternalGenTrq)/t(2)
   u_out%ExternalGenTrq = u1%ExternalGenTrq + b0 * t_out
   b0 = -(u1%ExternalElecPwr - u2%ExternalElecPwr)/t(2)
@@ -7483,6 +7548,15 @@ IF (ALLOCATED(u_out%ExternalBlPitchCom) .AND. ALLOCATED(u1%ExternalBlPitchCom)) 
   b1 = (t(3)**2*(u1%ExternalBlPitchCom - u2%ExternalBlPitchCom) + t(2)**2*(-u1%ExternalBlPitchCom + u3%ExternalBlPitchCom))/(t(2)*t(3)*(t(2) - t(3)))
   c1 = ( (t(2)-t(3))*u1%ExternalBlPitchCom + t(3)*u2%ExternalBlPitchCom - t(2)*u3%ExternalBlPitchCom ) / (t(2)*t(3)*(t(2) - t(3)))
   u_out%ExternalBlPitchCom = u1%ExternalBlPitchCom + b1 * t_out + c1 * t_out**2
+  DEALLOCATE(b1)
+  DEALLOCATE(c1)
+END IF ! check if allocated
+IF (ALLOCATED(u_out%ExternalBlAirfoilCom) .AND. ALLOCATED(u1%ExternalBlAirfoilCom)) THEN
+  ALLOCATE(b1(SIZE(u_out%ExternalBlAirfoilCom,1)))
+  ALLOCATE(c1(SIZE(u_out%ExternalBlAirfoilCom,1)))
+  b1 = (t(3)**2*(u1%ExternalBlAirfoilCom - u2%ExternalBlAirfoilCom) + t(2)**2*(-u1%ExternalBlAirfoilCom + u3%ExternalBlAirfoilCom))/(t(2)*t(3)*(t(2) - t(3)))
+  c1 = ( (t(2)-t(3))*u1%ExternalBlAirfoilCom + t(3)*u2%ExternalBlAirfoilCom - t(2)*u3%ExternalBlAirfoilCom ) / (t(2)*t(3)*(t(2) - t(3)))
+  u_out%ExternalBlAirfoilCom = u1%ExternalBlAirfoilCom + b1 * t_out + c1 * t_out**2
   DEALLOCATE(b1)
   DEALLOCATE(c1)
 END IF ! check if allocated

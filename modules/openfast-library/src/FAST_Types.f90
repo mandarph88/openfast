@@ -531,6 +531,7 @@ IMPLICIT NONE
     REAL(ReKi)  :: YawPosCom      !< yaw position command from Simulink/Labview [-]
     REAL(ReKi)  :: YawRateCom      !< yaw rate command from Simulink/Labview [-]
     REAL(ReKi) , DIMENSION(1:3)  :: BlPitchCom      !< blade pitch commands from Simulink/Labview [rad/s]
+    REAL(ReKi) , DIMENSION(1:3)  :: BlAirfoilCom      !< blade airfoil commands from Simulink/Labview [-]
     REAL(ReKi)  :: HSSBrFrac      !< Fraction of full braking torque: 0 (off) <= HSSBrFrac <= 1 (full) from Simulink or LabVIEW [-]
     REAL(ReKi) , DIMENSION(1:3)  :: LidarFocus      !< lidar focus (relative to lidar location) [m]
   END TYPE FAST_ExternInputType
@@ -28328,6 +28329,7 @@ ENDIF
     DstExternInputTypeData%YawPosCom = SrcExternInputTypeData%YawPosCom
     DstExternInputTypeData%YawRateCom = SrcExternInputTypeData%YawRateCom
     DstExternInputTypeData%BlPitchCom = SrcExternInputTypeData%BlPitchCom
+    DstExternInputTypeData%BlAirfoilCom = SrcExternInputTypeData%BlAirfoilCom
     DstExternInputTypeData%HSSBrFrac = SrcExternInputTypeData%HSSBrFrac
     DstExternInputTypeData%LidarFocus = SrcExternInputTypeData%LidarFocus
  END SUBROUTINE FAST_CopyExternInputType
@@ -28383,6 +28385,7 @@ ENDIF
       Re_BufSz   = Re_BufSz   + 1  ! YawPosCom
       Re_BufSz   = Re_BufSz   + 1  ! YawRateCom
       Re_BufSz   = Re_BufSz   + SIZE(InData%BlPitchCom)  ! BlPitchCom
+      Re_BufSz   = Re_BufSz   + SIZE(InData%BlAirfoilCom)  ! BlAirfoilCom
       Re_BufSz   = Re_BufSz   + 1  ! HSSBrFrac
       Re_BufSz   = Re_BufSz   + SIZE(InData%LidarFocus)  ! LidarFocus
   IF ( Re_BufSz  .GT. 0 ) THEN 
@@ -28422,6 +28425,8 @@ ENDIF
       Re_Xferred   = Re_Xferred   + 1
       ReKiBuf ( Re_Xferred:Re_Xferred+(SIZE(InData%BlPitchCom))-1 ) = PACK(InData%BlPitchCom,.TRUE.)
       Re_Xferred   = Re_Xferred   + SIZE(InData%BlPitchCom)
+      ReKiBuf ( Re_Xferred:Re_Xferred+(SIZE(InData%BlAirfoilCom))-1 ) = PACK(InData%BlAirfoilCom,.TRUE.)
+      Re_Xferred   = Re_Xferred   + SIZE(InData%BlAirfoilCom)
       ReKiBuf ( Re_Xferred:Re_Xferred+(1)-1 ) = InData%HSSBrFrac
       Re_Xferred   = Re_Xferred   + 1
       ReKiBuf ( Re_Xferred:Re_Xferred+(SIZE(InData%LidarFocus))-1 ) = PACK(InData%LidarFocus,.TRUE.)
@@ -28479,6 +28484,17 @@ ENDIF
     mask1 = .TRUE. 
       OutData%BlPitchCom = UNPACK(ReKiBuf( Re_Xferred:Re_Xferred+(SIZE(OutData%BlPitchCom))-1 ), mask1, 0.0_ReKi )
       Re_Xferred   = Re_Xferred   + SIZE(OutData%BlPitchCom)
+    DEALLOCATE(mask1)
+    i1_l = LBOUND(OutData%BlAirfoilCom,1)
+    i1_u = UBOUND(OutData%BlAirfoilCom,1)
+    ALLOCATE(mask1(i1_l:i1_u),STAT=ErrStat2)
+    IF (ErrStat2 /= 0) THEN 
+       CALL SetErrStat(ErrID_Fatal, 'Error allocating mask1.', ErrStat, ErrMsg,RoutineName)
+       RETURN
+    END IF
+    mask1 = .TRUE. 
+      OutData%BlAirfoilCom = UNPACK(ReKiBuf( Re_Xferred:Re_Xferred+(SIZE(OutData%BlAirfoilCom))-1 ), mask1, 0.0_ReKi )
+      Re_Xferred   = Re_Xferred   + SIZE(OutData%BlAirfoilCom)
     DEALLOCATE(mask1)
       OutData%HSSBrFrac = ReKiBuf( Re_Xferred )
       Re_Xferred   = Re_Xferred + 1

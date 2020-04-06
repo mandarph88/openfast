@@ -881,6 +881,12 @@ SUBROUTINE SrvD_SetExternalInputs( p_FAST, m_FAST, u_SrvD )
       end do
    end if
 
+   if (ALLOCATED(u_SrvD%ExternalBlAirfoilCom)) then !Added by Mandar for Blade Flap use with Simulink 3-29-2020
+      do i=1,SIZE(u_SrvD%ExternalBlAirfoilCom)
+         u_SrvD%ExternalBlAirfoilCom(i)   = m_FAST%ExternInput%BlAirfoilCom(i)
+      end do
+   end if
+
 END SUBROUTINE SrvD_SetExternalInputs
 !----------------------------------------------------------------------------------------------------------------------------------
 !> This routine transfers the SD outputs into inputs required for HD

@@ -1215,7 +1215,12 @@ SUBROUTINE FAST_InitializeAll( t_initial, p_FAST, y_FAST, m_FAST, ED, BD, SrvD, 
       
       do i=1,SIZE(SrvD%Input(1)%ExternalBlPitchCom)
          m_FAST%ExternInput%BlPitchCom(i) = SrvD%Input(1)%ExternalBlPitchCom(i)
-      end do   
+      end do
+
+      do i=1,SIZE(SrvD%Input(1)%ExternalBlAirfoilCom) ! Added by Mandar for Flap control 3-30-20
+         m_FAST%ExternInput%BlAirfoilCom(i) = SrvD%Input(1)%ExternalBlAirfoilCom(i)
+      end do
+
    end if
    
    m_FAST%ExternInput%LidarFocus = 1.0_ReKi  ! make this non-zero (until we add the initial position in the InflowWind input file)

@@ -43,11 +43,12 @@ EXTERNAL_ROUTINE void FAST_CreateCheckpoint(int * iTurb, const char *CheckpointR
 
 // make sure these parameters match with FAST_Library.f90
 #define MAXIMUM_BLADES 3
+#define MAXIMUM_FLAPS 3 // Added by Mandar for flap control with Simulink 3-27-2020
 #define MAXIMUM_OUTPUTS 1000
 #define CHANNEL_LENGTH 10  
-#define MAXInitINPUTS 10
+#define MAXInitINPUTS 13
 
-#define NumFixedInputs  2 + 2 + MAXIMUM_BLADES + 1
+#define NumFixedInputs  2 + 2 + MAXIMUM_BLADES + 1 + MAXIMUM_FLAPS // Modified by Mandar for flap control with Simulink
 
 
 #endif
