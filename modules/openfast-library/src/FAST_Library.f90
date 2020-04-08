@@ -333,7 +333,7 @@ subroutine FAST_SetExternalInputs(iTurb, NumInputs_c, InputAry, m_FAST)
 
       IF ( NumInputs_c > NumFixedInputs ) THEN  ! NumFixedInputs is the fixed number of inputs
          IF ( NumInputs_c == NumFixedInputs + 3 ) &
-            m_FAST%ExternInput%LidarFocus = InputAry(9:11) 
+            m_FAST%ExternInput%LidarFocus = InputAry(12:14) 
       END IF   
       
 end subroutine FAST_SetExternalInputs

@@ -3024,6 +3024,7 @@ SUBROUTINE Pitch_CalcOutput( t, u, p, x, xd, z, OtherState, y, m, ErrStat, ErrMs
          CASE ( ControlMode_EXTERN )              ! User-defined from Simulink or LabVIEW.
 
             y%BlPitchCom = u%ExternalBlPitchCom                ! copy entire array
+            y%BlAirfoilCom = u%ExternalBlAirfoilCom ! Added by Mandar for Flap control using simulink
          
          CASE ( ControlMode_DLL )                                ! User-defined pitch control from Bladed-style DLL
             
