@@ -1318,8 +1318,8 @@ subroutine SetInputsForBEMT(p, u, m, indx, errStat, errMsg)
    integer(intKi)                          :: ErrStat2
    character(ErrMsgLen)                    :: ErrMsg2
    character(*), parameter                 :: RoutineName = 'SetInputsForBEMT'
-   
-   
+
+
    ErrStat = ErrID_None
    ErrMsg  = ""
    
@@ -1444,7 +1444,7 @@ subroutine SetInputsForBEMT(p, u, m, indx, errStat, errMsg)
    end do !k=blades  
   
    m%BEMT_u(indx)%UserProp = u%UserProp
-   
+
 end subroutine SetInputsForBEMT
 !----------------------------------------------------------------------------------------------------------------------------------
 !> This subroutine converts outputs from BEMT (stored in m%BEMT_y) into values on the AeroDyn BladeLoad output mesh.
@@ -2477,7 +2477,6 @@ SUBROUTINE AD_JacobianPInput( t, u, p, x, xd, z, OtherState, y, m, ErrStat, ErrM
    ErrStat = ErrID_None
    ErrMsg  = ''
 
-   print *,'flap: ', u%UserProp(2,:) ! Debug: Added by Mandar to print out flaps
       ! get OP values here:
    !call AD_CalcOutput( t, u, p, x, xd, z, OtherState, y, m, ErrStat2, ErrMsg2 )
    call SetInputsForBEMT(p, u, m, indx, errStat2, errMsg2)  
